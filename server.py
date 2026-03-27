@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 import shutil
 import os
 import uuid
-from coach_ai import detect_champions_async, generate_coach_report_async
+from video_utils import extract_frames_from_report
+from coach_ai import detect_champions_async, generate_coach_report_async, ask_coach_ai
 
 app = FastAPI(title="LoL AI Coach Web")
 
@@ -31,19 +32,21 @@ async def api_detect_champions(
     video: UploadFile = File(...),
     api_key: Optional[str] = Form(None)
 ):
-    if not video.filename.lower().endswith((".mp4", ".mkv", ".webm", ".mov")):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un formato de video")
+    valid_exts = (".mp4", ".mkv", ".webm", ".mov", ".jpg", ".jpeg", ".png", ".webp")
+    if not video.filename.lower().endswith(valid_exts):
+        raise HTTPException(status_code=400, detail="El archivo no es un formato válido de video o imagen soportado")
         
     task_id = str(uuid.uuid4())
+    temp_path = f"temp_{task_id}_{video.filename}"
     analysis_tasks[task_id] = {
-        "status": "Guardando video localmente en el servidor...",
+        "status": "Guardando multimedia localmente en el servidor...",
         "progress": 30,
         "state": "PROCESSING_CHAMPIONS",
         "result": None,
-        "error": None
+        "error": None,
+        "local_temp_path": temp_path
     }
         
-    temp_path = f"temp_{task_id}_{video.filename}"
     try:
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
@@ -68,7 +71,6 @@ async def api_detect_champions(
         except Exception as e:
             analysis_tasks[task_id]["error"] = str(e)
             analysis_tasks[task_id]["state"] = "FAILED"
-        finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
@@ -103,10 +105,22 @@ async def api_generate_report(payload: ChampionsPayload, background_tasks: Backg
             
             analysis_tasks[task_id]["state"] = "DONE"
             analysis_tasks[task_id]["result"] = final_report
+            analysis_tasks[task_id]["file_id"] = payload.file_id
+            analysis_tasks[task_id]["champ_data"] = payload.champions
+            
+            # Phase 3: Extract frames if it's a video
+            temp_path = analysis_tasks[task_id].get("local_temp_path")
+            if temp_path and os.path.exists(temp_path):
+                extract_frames_from_report(temp_path, task_id, final_report)
             
         except Exception as e:
             analysis_tasks[task_id]["error"] = str(e)
             analysis_tasks[task_id]["state"] = "FAILED"
+        finally:
+            temp_path = analysis_tasks.get(task_id, {}).get("local_temp_path")
+            if temp_path and os.path.exists(temp_path):
+                try: os.remove(temp_path)
+                except: pass
 
     background_tasks.add_task(run_report)
     return JSONResponse(content={"status": "scheduled"})
@@ -116,6 +130,31 @@ async def get_progress(task_id: str):
     if task_id not in analysis_tasks:
         raise HTTPException(status_code=404, detail="Tarea no encontrada o expirada.")
     return JSONResponse(content=analysis_tasks[task_id])
+
+class ChatPayload(BaseModel):
+    task_id: str
+    message: str
+    api_key: Optional[str] = None
+
+@app.post("/api/chat")
+async def api_chat(payload: ChatPayload):
+    task_id = payload.task_id
+    if task_id not in analysis_tasks:
+        raise HTTPException(status_code=404, detail="La sesión de análisis ha caducado o no existe.")
+        
+    task_data = analysis_tasks[task_id]
+    if task_data.get("state") != "DONE":
+        raise HTTPException(status_code=400, detail="Debes esperar a que termine el análisis antes de chatear.")
+        
+    try:
+        file_id = task_data.get("file_id")
+        if not file_id:
+            raise HTTPException(status_code=500, detail="Error interno: file_id perdido")
+            
+        response_text = ask_coach_ai(file_id, task_data, payload.message, payload.api_key)
+        return JSONResponse(content={"reply": response_text})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

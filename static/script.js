@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingText = document.getElementById('loading-text');
 
     let selectedFile = null;
+    let currentFileId = null;
+    let currentTaskId = null;
 
     // --- Drag and Drop Logic --- //
     dropzone.addEventListener('click', () => fileInput.click());
@@ -39,8 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function handleFileSelect(file) {
-        if (!file.type.startsWith('video/')) {
-            alert('Por favor selecciona un archivo de video (MP4, MKV, WebM).');
+        if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) {
+            alert('Por favor selecciona un archivo de video o imagen (MP4, MKV, WebM, JPG, PNG).');
             return;
         }
         
@@ -116,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Subida Real mediante XMLHttpRequest
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/analyze', true);
+        xhr.open('POST', '/api/detect-champions', true);
 
         xhr.upload.onprogress = function(e) {
             if (e.lengthComputable) {
@@ -206,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         currentFileId = data.result.file_id;
                         currentTaskId = taskId;
-                        renderChampionsUI(data.result.champions);
+                        renderChampionsUI(data.result.champions, data.result.pov_side);
                         
                         loadingSection.classList.add('hidden');
                         document.getElementById('champions-section').classList.remove('hidden');
@@ -218,12 +220,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // Mostramos 1 seg la barra llena y renderizamos
                         setTimeout(() => {
-                            const etaBadge = document.getElementById('eta-badge');
-                            if(etaBadge) etaBadge.classList.add('hidden');
-                            
-                            renderResults(data.result);
-                            loadingSection.classList.add('hidden');
-                            document.getElementById('results-section').classList.remove('hidden');
+                            try {
+                                const etaBadge = document.getElementById('eta-badge');
+                                if(etaBadge) etaBadge.classList.add('hidden');
+                                
+                                renderResults(data.result);
+                                loadingSection.classList.add('hidden');
+                                document.getElementById('results-section').classList.remove('hidden');
+                            } catch(err) {
+                                console.error(err);
+                                alert("Ocurrió un error inesperado al renderizar el reporte: " + err.message);
+                                loadingSection.classList.add('hidden');
+                                uploadSection.classList.remove('hidden');
+                            }
                         }, 500);
                     }
                 } catch (e) {
@@ -232,14 +241,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1000); // Poll cada segundo
         }
 
-        let currentFileId = null;
-        let currentTaskId = null;
-
-        function renderChampionsUI(champions) {
+        function renderChampionsUI(champions, pov_side) {
             const allyList = document.getElementById('ally-list');
             const enemyList = document.getElementById('enemy-list');
             allyList.innerHTML = '';
             enemyList.innerHTML = '';
+            
+            // Invertir lados si somos Red Side
+            const grid = document.querySelector('.champions-grid');
+            if (pov_side && pov_side.toLowerCase() === 'red') {
+                grid.style.flexDirection = 'row-reverse';
+            } else {
+                grid.style.flexDirection = 'row';
+            }
+
+            // Clasificar según prioridad de rol estándar de LoL
+            champions.forEach(c => {
+               const r = (c.role || "").toLowerCase();
+               if(r.includes('top')) c._order = 1;
+               else if(r.includes('jung') || r.includes('jg')) c._order = 2;
+               else if(r.includes('mid')) c._order = 3;
+               else if(r.includes('adc') || r.includes('bot') || r.includes('tira')) c._order = 4;
+               else if(r.includes('sup')) c._order = 5;
+               else c._order = 99;
+            });
+            champions.sort((a, b) => a._order - b._order);
 
             champions.forEach((champ, index) => {
                 const isAlly = champ.team.toLowerCase() === 'aliado';
@@ -343,7 +369,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (items && items.length > 0) {
             items.forEach(item => {
                 const li = document.createElement('li');
-                li.innerHTML = item; // Using innerHTML if the model naturally returns bold asterisks
+                
+                // Aseguramos que sea string y parseamos los timestamps
+                let htmlContent = String(item || "");
+                if (currentTaskId) {
+                    htmlContent = htmlContent.replace(/\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, (match, timeStr) => {
+                        const safeTimeStr = timeStr ? timeStr.replace(/:/g, '_') : 'err';
+                        const frameUrl = `/static/frames/${currentTaskId}_${safeTimeStr}.jpg`;
+                        return `<span class="timestamp-hover" data-frame="${frameUrl}" style="color: var(--hextech-blue); font-weight: bold; cursor: help; border-bottom: 1px dashed var(--hextech-blue); padding-bottom: 1px;" onmouseenter="showFrame(event, this)" onmouseleave="hideFrame()">${match}</span>`;
+                    });
+                }
+                
+                li.innerHTML = htmlContent;
                 ul.appendChild(li);
             });
         } else {
@@ -352,6 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderResults(data) {
+        // Asignar el perfil deducido
+        document.getElementById('profile-tag').textContent = data.player_profile_tag || "Evaluación Básica";
+        document.getElementById('profile-reason').textContent = data.player_profile_reason || "No se ha determinado un perfil psicológico particular.";
+
         setScore('mech-score', data.mechanics_score, '#0ac8b9');
         setScore('map-score', data.map_awareness_score, '#0ac8b9');
         setScore('pos-score', data.positioning_score, '#0ac8b9');
@@ -364,8 +405,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('game-plan-text').textContent = data.game_plan || "La IA no dedujo un plan de juego claro para la composición de la partida.";
 
         // Renderizar el Gráfico si hay datos
+        const chartContainer = document.querySelector('.chart-container');
         if (data.momentum_graph && data.momentum_graph.length > 0) {
+            chartContainer.style.display = 'flex';
             renderChart(data.momentum_graph);
+        } else {
+            chartContainer.style.display = 'none';
         }
     }
 
@@ -449,8 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedFile = null;
         fileInput.value = '';
         dropzone.classList.remove('has-file');
-        dropzone.querySelector('h2').textContent = 'Arrastra tu video aquí';
-        dropzone.querySelector('p').textContent = 'O haz clic para seleccionar (MP4, MKV, WebM)';
+        dropzone.querySelector('h2').textContent = 'Arrastra tu video o imagen aquí';
+        dropzone.querySelector('p').textContent = 'O haz clic para seleccionar (MP4, MKV, JPG, PNG...)';
         analyzeBtn.disabled = true;
         
         // Reset scores visual
@@ -458,5 +503,107 @@ document.addEventListener('DOMContentLoaded', () => {
             c.style.background = `conic-gradient(var(--hextech-blue) 0%, rgba(255,255,255,0.05) 0%)`;
             c.querySelector('.score-value').textContent = '0/10';
         });
+
+        const chatMessages = document.getElementById('chat-messages');
+        if(chatMessages) {
+            chatMessages.innerHTML = `
+            <div style="align-self: flex-start; background: rgba(10, 200, 185, 0.1); border-left: 2px solid var(--hextech-blue); padding: 0.8rem 1rem; border-radius: 4px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">
+                <strong>Challenger Coach:</strong> ¡Hola! Revisé el material. Si no te queda claro por qué deberías comprar un ítem o por qué dije que posicionaste mal, preguntame.
+            </div>`;
+        }
     });
+
+    // --- Chat Logic --- //
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+
+    if (chatSendBtn) {
+        chatSendBtn.addEventListener('click', async () => {
+            const message = chatInput.value.trim();
+            if (!message || !currentTaskId) return;
+
+            // Mostrar el mensaje del usuario
+            const userDiv = document.createElement('div');
+            userDiv.style.cssText = 'align-self: flex-end; background: rgba(200, 155, 60, 0.1); border-right: 2px solid var(--gold); padding: 0.8rem 1rem; border-radius: 4px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; max-width: 85%; margin-left: auto;';
+            userDiv.innerHTML = `<strong>Tú:</strong> ${message}`;
+            chatMessages.appendChild(userDiv);
+            
+            chatInput.value = '';
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'align-self: flex-start; padding: 0.8rem 1rem; color: var(--text-muted); font-size: 0.9rem; font-style: italic;';
+            loadingDiv.textContent = 'Coach escribiendo...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const apiKeyInput = document.getElementById('custom-api-key').value;
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: currentTaskId, message: message, api_key: apiKeyInput || null })
+                });
+
+                chatMessages.removeChild(loadingDiv);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const coachDiv = document.createElement('div');
+                    coachDiv.style.cssText = 'align-self: flex-start; background: rgba(10, 200, 185, 0.1); border-left: 2px solid var(--hextech-blue); padding: 0.8rem 1rem; border-radius: 4px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; max-width: 85%;';
+                    // Convert markdown generic bold format
+                    let formattedText = data.reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    formattedText = formattedText.replace(/\n/g, '<br>');
+                    coachDiv.innerHTML = `<strong>Challenger Coach:</strong><br>${formattedText}`;
+                    chatMessages.appendChild(coachDiv);
+                } else {
+                    const errorData = await res.json();
+                    alert('No se pudo enviar el mensaje: ' + errorData.detail);
+                }
+            } catch (e) {
+                if(chatMessages.contains(loadingDiv)) chatMessages.removeChild(loadingDiv);
+                alert('Error de conexión con el Coach.');
+            }
+
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatInput.focus();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') chatSendBtn.click();
+        });
+    }
 });
+
+// Funciones globales para el Tooltip flotante 
+window.showFrame = function(e, element) {
+    const tooltip = document.getElementById('hover-tooltip');
+    const hoverImg = document.getElementById('hover-image');
+    
+    // Comprobamos la imagen antes de mostrar el bloque (evita cuadros vacíos rotos si hay error de cv2)
+    const frameSrc = element.getAttribute('data-frame');
+    hoverImg.src = frameSrc;
+    hoverImg.onerror = function() {
+        hoverImg.src = '';
+        tooltip.style.display = 'none'; // Si no existía la imagen localmente, la escondemos
+    };
+    hoverImg.onload = function() {
+        tooltip.style.display = 'block';
+    };
+    
+    const rect = element.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Posicionar debajo del span interactivo
+    tooltip.style.top = (rect.bottom + scrollTop + 10) + 'px';
+    tooltip.style.left = Math.max(0, rect.left - 100) + 'px'; // Prevenir que se salga de la pantalla izq
+};
+
+window.hideFrame = function() {
+    const tooltip = document.getElementById('hover-tooltip');
+    tooltip.style.display = 'none';
+};

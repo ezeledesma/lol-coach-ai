@@ -21,10 +21,10 @@
         <section id="upload-section" class="glass-panel active">
             <div id="dropzone" class="dropzone">
                 <div id="drop-zone" class="drop-zone glass-panel">
-                <h2>Arrastra tu video aquí</h2>
-                <p>O haz clic para seleccionar (MP4, MKV, WebM)</p>
-                <button class="btn secondary" onclick="document.getElementById('video-upload').click()">Explorar Archivos</button>
-                <input type="file" id="video-upload" accept="video/mp4, video/x-matroska, video/webm, video/quicktime" hidden>
+                <h2>Arrastra tu video o imagen aquí</h2>
+                <p>O haz clic para seleccionar (MP4, MKV, JPG, PNG...)</p>
+                <button class="btn secondary">Explorar Archivos</button>
+                <input type="file" id="video-upload" accept="video/mp4, video/x-matroska, video/webm, video/quicktime, image/png, image/jpeg, image/webp" hidden>
             </div>
             </div>
             
@@ -77,6 +77,12 @@
 
         <!-- Resultados -->
         <section id="results-section" class="hidden">
+            <!-- Etiqueta de Perfil -->
+            <div id="player-profile-container" class="glass-panel" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 1rem; border-top: 3px solid var(--gold);">
+                <h3 style="color: var(--gold); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem;">🎯 Perfil Detectado: <span id="profile-tag" style="color: white; font-weight: bold;">...</span></h3>
+                <p id="profile-reason" style="color: var(--text-main); font-size: 0.95rem; margin: 0; max-width: 800px; text-align: center;">...</p>
+            </div>
+
             <!-- Puntajes Circulares -->
             <div class="scores-container">
                 <div class="score-card glass-panel">
@@ -133,9 +139,32 @@
                 </div>
             </div>
 
-            <button id="reset-btn" class="btn secondary">Subir otro video</button>
+            <!-- Chat Módulo -->
+            <div id="chat-module" class="glass-panel" style="width: 100%; text-align: left; display: flex; flex-direction: column; margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <h3 style="color: var(--hextech-blue); font-size: 1.2rem; margin: 0;">💬 Chat con tu Coach</h3>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Pregúntale lo que sea sobre los resultados</span>
+                </div>
+                
+                <div id="chat-messages" style="flex: 1; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1rem; padding: 0.5rem;">
+                    <div style="align-self: flex-start; background: rgba(10, 200, 185, 0.1); border-left: 2px solid var(--hextech-blue); padding: 0.8rem 1rem; border-radius: 4px; color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">
+                        <strong>Challenger Coach:</strong> ¡Hola! Revisé el material. Si no te queda claro por qué deberías comprar un ítem o por qué dije que posicionaste mal, preguntame.
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="chat-input" class="hextech-input" placeholder="Ej: ¿Por qué decís que el Lord Dominik era mejor opción?" style="flex: 1; border-radius: 4px; padding: 0.8rem; font-size: 0.9rem;">
+                    <button id="chat-send-btn" class="btn primary" style="margin-top: 0; min-width: 100px;">Enviar</button>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="btn secondary">Subir otro medio</button>
         </section>
     </main>
+
+    <div id="hover-tooltip" style="position: absolute; display: none; z-index: 9999; pointer-events: none; background: #081018; border: 2px solid var(--gold); border-radius: 4px; box-shadow: 0 8px 30px rgba(0,0,0,0.8); padding: 4px;">
+        <img id="hover-image" src="" alt="Frame" style="max-width: 450px; max-height: 250px; border-radius: 2px; display: block;">
+    </div>
 
     <script src="script.js"></script>
 </body>
