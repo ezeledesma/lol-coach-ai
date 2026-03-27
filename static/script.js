@@ -320,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             champions.forEach((champ, index) => {
                 const cleanName = getChampImageName(champ.name);
+                const isAlly = (champ.team || "").toLowerCase() === 'aliado';
                 
                 const card = document.createElement('div');
                 card.className = 'champ-card';
