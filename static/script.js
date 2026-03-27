@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('file-input');
+    const fileInput = document.getElementById('video-upload');
     const analyzeBtn = document.getElementById('analyze-btn');
     const resetBtn = document.getElementById('reset-btn');
     
