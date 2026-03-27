@@ -258,6 +258,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1000); // Poll cada segundo
         }
 
+        function getChampImageName(rawName) {
+            let name = (rawName || "").toLowerCase().replace(/[^a-z0-9]/g, '');
+            const exceptions = {
+                'wukong': 'MonkeyKing', 'monkeyking': 'MonkeyKing',
+                'renataglasc': 'Renata', 'renata': 'Renata',
+                'nunuwillump': 'Nunu', 'nunu': 'Nunu',
+                'drmundo': 'DrMundo', 'mundo': 'DrMundo',
+                'missfortune': 'MissFortune', 'mf': 'MissFortune',
+                'masteryi': 'MasterYi', 'yi': 'MasterYi',
+                'tahmkench': 'TahmKench', 'tahm': 'TahmKench',
+                'xinzhao': 'XinZhao', 'xin': 'XinZhao',
+                'aurelionsol': 'AurelionSol', 'asol': 'AurelionSol',
+                'leesin': 'LeeSin', 'lee': 'LeeSin',
+                'twistedfate': 'TwistedFate', 'tf': 'TwistedFate',
+                'jarvaniv': 'JarvanIV', 'j4': 'JarvanIV', 'jarvan': 'JarvanIV',
+                'kaisa': 'Kaisa',
+                'velkoz': 'Velkoz',
+                'chogath': 'Chogath',
+                'khazix': 'Khazix',
+                'reksai': 'RekSai',
+                'kogmaw': 'KogMaw',
+                'belveth': 'Belveth',
+                'leblanc': 'Leblanc', 'lb': 'Leblanc',
+                'ksante': 'KSante'
+            };
+            if (exceptions[name]) return exceptions[name];
+            if (name.length > 0) return name.charAt(0).toUpperCase() + name.slice(1);
+            return 'Unknown';
+        }
+
         function renderChampionsUI(champions, pov_side) {
             const allyList = document.getElementById('ally-list');
             const enemyList = document.getElementById('enemy-list');
@@ -285,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
             champions.sort((a, b) => a._order - b._order);
 
             champions.forEach((champ, index) => {
-                const isAlly = champ.team.toLowerCase() === 'aliado';
+                const cleanName = getChampImageName(champ.name);
                 
                 const card = document.createElement('div');
                 card.className = 'champ-card';
                 card.innerHTML = `
-                    <img class="champ-img" src="https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${champ.name.replace(/[^a-zA-Z]/g, '')}.png" alt="${champ.name}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/29.png'">
+                    <img class="champ-img" src="https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${cleanName}.png" alt="${champ.name}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/29.png'">
                     <div class="champ-info">
                         <input type="text" class="champ-name-input" value="${champ.name}" data-index="${index}" placeholder="Ej: Ahri">
                         <span class="champ-role">${champ.role}</span>
@@ -306,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.addEventListener('change', (e) => { 
                     champ.name = e.target.value;
                     const img = card.querySelector('.champ-img');
-                    img.src = `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${champ.name.replace(/[^a-zA-Z]/g, '')}.png`;
+                    img.src = `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${getChampImageName(champ.name)}.png`;
                 });
 
                 const radio = card.querySelector('input[type="radio"]');
