@@ -26,6 +26,10 @@ class ChampionsPayload(BaseModel):
 async def root():
     return RedirectResponse(url="/static/index.html")
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return RedirectResponse(url="https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/29.png")
+
 @app.post("/api/detect-champions")
 async def api_detect_champions(
     background_tasks: BackgroundTasks, 
