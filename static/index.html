@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League of Legends AI Coach</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <header>
+        <h1>LoL <span>AI</span> Coach</h1>
+        <p>Analiza tu cámara y domina la Grieta del Invocador</p>
+    </header>
+
+    <main id="app-container">
+        <!-- Subida de Video -->
+        <section id="upload-section" class="glass-panel active">
+            <div id="dropzone" class="dropzone">
+                <div id="drop-zone" class="drop-zone glass-panel">
+                <p>Arrastra tu video aquí (.mp4, .mkv, .webm)</p>
+                o
+                <button class="btn secondary" onclick="document.getElementById('video-upload').click()">Explorar Archivos</button>
+                <input type="file" id="video-upload" accept="video/mp4, video/x-matroska, video/webm, video/quicktime" hidden>
+            </div>
+            </div>
+            
+            <div class="api-key-container glass-panel" style="margin-top: 1rem; padding: 1.5rem; text-align: left;">
+                <label for="custom-api-key" style="color: var(--gold); display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600;">🔑 Llave Gemini de Google (Para Invitados)</label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <input type="password" id="custom-api-key" class="hextech-input" placeholder="Pega tu API KEY aquí..." style="flex: 1; min-width: 200px;">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn secondary" style="margin-top: 0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; padding: 0 1rem; border-radius: 4px;">Obtener Llave (Gratis)</a>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.6rem; line-height: 1.4;">Si invitas amigos, pídeles que hagan clic en <b>"Obtener Llave"</b>, inicien sesión con su Google, den a <i>Create API Key</i> y la peguen aquí. Es gratis y evita que gasten tu cuota privada. Si estás jugando en tu propia PC, déjalo vacío.</p>
+            </div>
+
+            <button id="analyze-btn" class="btn primary" style="margin-top: 1.5rem;" disabled>Iniciar Análisis Coach</button>
+        </section>
+
+        <!-- Cargando / Analizando -->
+        <section id="loading-section" class="glass-panel hidden">
+            <div class="loader"></div>
+            <h2 id="loading-text">Gemini está analizando tu jugabilidad...</h2>
+            
+            <div class="progress-bar-container">
+                <div id="progress-bar-fill" class="progress-bar-fill"></div>
+            </div>
+            <div class="loading-status-row">
+                <p id="progress-detail">Iniciando conexión...</p>
+                <div id="eta-badge" class="eta-badge hidden">
+                    ⏱️ <span id="eta-text">Calculando...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resultados -->
+        <section id="results-section" class="hidden">
+            <!-- Puntajes Circulares -->
+            <div class="scores-container">
+                <div class="score-card glass-panel">
+                    <h3>Mecánicas</h3>
+                    <div class="progress-circle" data-score="0" id="mech-score">
+                        <span class="score-value">0/10</span>
+                    </div>
+                    <p class="score-reason" id="mech-reason">...</p>
+                </div>
+                <div class="score-card glass-panel">
+                    <h3>Mapa y Visión</h3>
+                    <div class="progress-circle" data-score="0" id="map-score">
+                        <span class="score-value">0/10</span>
+                    </div>
+                    <p class="score-reason" id="map-reason">...</p>
+                </div>
+                <div class="score-card glass-panel">
+                    <h3>Posicionamiento</h3>
+                    <div class="progress-circle" data-score="0" id="pos-score">
+                        <span class="score-value">0/10</span>
+                    </div>
+                    <p class="score-reason" id="pos-reason">...</p>
+                </div>
+            </div>
+
+            <!-- Columnas de Feedback -->
+            <div class="feedback-container">
+                <div class="feedback-column glass-panel good">
+                    <div class="col-header"><h3>Fortalezas</h3></div>
+                    <ul id="good-list"></ul>
+                </div>
+                
+                <div class="feedback-column glass-panel bad">
+                    <div class="col-header"><h3>Errores Críticos</h3></div>
+                    <ul id="bad-list"></ul>
+                </div>
+
+                <div class="feedback-column glass-panel improve">
+                    <div class="col-header"><h3>Cómo Mejorar</h3></div>
+                    <ul id="improve-list"></ul>
+                </div>
+            </div>
+
+            <!-- Gráfico Temporal de Win Con y Momentum -->
+            <div class="game-plan-card glass-panel" style="width: 100%; text-align: left; border-left: 4px solid var(--gold);">
+                <h3 style="color: var(--gold); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; justify-content: flex-start;">🛡️ Tu Rol y Win Condition</h3>
+                <p id="game-plan-text" style="line-height: 1.6; color: var(--text-main); font-size: 0.95rem;">...</p>
+            </div>
+
+            <div class="chart-container glass-panel" style="width: 100%; min-height: 300px; display: flex; flex-direction: column;">
+                <h3 style="margin-bottom: 1rem; color: var(--text-main);">Línea Temporal (Ventaja/Momentum)</h3>
+                <div style="flex: 1; position: relative;">
+                    <canvas id="momentumChart"></canvas>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="btn secondary">Subir otro video</button>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Python / Caches
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Entornos virtuales e Información Sensible (IMPORTANTE NO SUBIR)
+.env
+.env.local
+
+# Archivos de video temporales (Para no sobrecargar GitHub)
+temp_*
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi
+
+# Archivos del SO
+.DS_Store
+Thumbs.db
