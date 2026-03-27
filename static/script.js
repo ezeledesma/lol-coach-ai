@@ -278,10 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="text" class="champ-name-input" value="${champ.name}" data-index="${index}" placeholder="Ej: Ahri">
                         <span class="champ-role">${champ.role}</span>
                     </div>
-                    <label class="pov-selector" style="cursor: pointer;">
+                    <label class="pov-selector" style="cursor: pointer; margin-right: 10px;">
                         <input type="radio" name="pov-radio" value="${index}" ${champ.is_pov ? 'checked' : ''}>
                         POV
                     </label>
+                    <button class="swap-team-btn" style="background: none; border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 0.8rem;" title="Mover al equipo contrario">⮂ Mover</button>
                 `;
                 
                 const input = card.querySelector('.champ-name-input');
@@ -295,6 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 radio.addEventListener('change', (e) => {
                     champions.forEach(c => c.is_pov = false);
                     champ.is_pov = true;
+                });
+
+                const swapBtn = card.querySelector('.swap-team-btn');
+                swapBtn.addEventListener('click', () => {
+                    champ.team = isAlly ? 'Enemigo' : 'Aliado';
+                    renderChampionsUI(champions, pov_side); // Refresca toda la lista al instante
                 });
 
                 if (isAlly) allyList.appendChild(card);
