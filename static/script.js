@@ -300,7 +300,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const swapBtn = card.querySelector('.swap-team-btn');
                 swapBtn.addEventListener('click', () => {
-                    champ.team = isAlly ? 'Enemigo' : 'Aliado';
+                    const targetTeam = isAlly ? 'Enemigo' : 'Aliado';
+                    // Buscar si hay un campeón en el equipo contrario que tenga nuestro mismo rol
+                    const counterpart = champions.find(c => c.team.toLowerCase() === targetTeam.toLowerCase() && c.role === champ.role);
+                    
+                    champ.team = targetTeam;
+                    if (counterpart) {
+                        counterpart.team = isAlly ? 'Aliado' : 'Enemigo';
+                    }
                     renderChampionsUI(champions, pov_side); // Refresca toda la lista al instante
                 });
 
