@@ -114,7 +114,11 @@ def detect_champions_async(video_path: str, progress_callback=None, custom_api_k
         )
         update_progress("[*] Campeones extraídos exitosamente. Esperando validación del usuario.", 100)
         champs_json = json.loads(response.text)
-        return {"file_id": video_file.name, "champions": champs_json["champions"]}
+        return {
+            "file_id": video_file.name, 
+            "champions": champs_json.get("champions", []),
+            "pov_side": champs_json.get("pov_side", "Desconocido")
+        }
     except Exception as e:
         print(f"[!] Error extrayendo campeones: {e}")
         client.files.delete(name=video_file.name)

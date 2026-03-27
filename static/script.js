@@ -186,11 +186,15 @@ document.addEventListener('DOMContentLoaded', () => {
         function pollProgress(taskId) {
             let pollStartTime = Date.now();
             let lastProgress = 30; // Arranca en 30% después de subir
+            let pollingErrorCount = 0;
 
             const intervalId = setInterval(async () => {
                 try {
                     const res = await fetch(`/api/progress/${taskId}`);
+                    if (!res.ok) throw new Error("HTTP Status " + res.status);
                     const data = await res.json();
+                    
+                    pollingErrorCount = 0; // reset on success
 
                     if (data.error) {
                         clearInterval(intervalId);
