@@ -13,6 +13,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFileId = null;
     let currentTaskId = null;
 
+    const errorBanner = document.getElementById('error-banner');
+    const errorText = document.getElementById('error-text');
+
+    function showError(msgStr) {
+        let text = msgStr;
+        if (text.includes('429') || text.includes('RESOURCE_EXHAUSTED')) {
+            text = "⚠️ Has consumido la cuota gratuita máxima de peticiones diarias del modelo Gemini 2.5 Flash de tu llave actual. Por favor ingresa una API Key personalizada tuya (o de un amigo) en el campo superior para usar su cuota ilimitada nueva, o espera a que tu saldo se restaure mañana de manera automática.";
+        }
+        errorText.textContent = text;
+        if (errorBanner) errorBanner.classList.remove('hidden');
+    }
+
+    function hideError() {
+        if (errorBanner) errorBanner.classList.add('hidden');
+    }
+
     // --- Drag and Drop Logic --- //
     dropzone.addEventListener('click', () => fileInput.click());
 
@@ -65,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     analyzeBtn.addEventListener('click', () => {
         if (!selectedFile) return;
 
+        hideError();
         uploadSection.classList.add('hidden');
         loadingSection.classList.remove('hidden');
 
@@ -151,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(etaCountdownInterval);
                 let errorMsg = 'Error en el servidor al subir';
                 try { errorMsg = JSON.parse(xhr.responseText).detail; } catch(e){}
-                alert(`Error: ${errorMsg}`);
+                showError(`Error: ${errorMsg}`);
                 loadingSection.classList.add('hidden');
                 uploadSection.classList.remove('hidden');
             }
@@ -159,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         xhr.onerror = function() {
             clearInterval(etaCountdownInterval);
-            alert('Error de red al intentar conectarse con el servidor.');
+            showError('Error de red al intentar conectarse con el servidor.');
             loadingSection.classList.add('hidden');
             uploadSection.classList.remove('hidden');
         };
@@ -178,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.error) {
                         clearInterval(intervalId);
                         clearInterval(etaCountdownInterval);
-                        alert(`El Coach de IA detectó un error:\n\n${data.error}`);
+                        showError(`El Coach de IA detectó un error:\n\n${data.error}`);
                         loadingSection.classList.add('hidden');
                         uploadSection.classList.remove('hidden');
                         return;
@@ -229,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 document.getElementById('results-section').classList.remove('hidden');
                             } catch(err) {
                                 console.error(err);
-                                alert("Ocurrió un error inesperado al renderizar el reporte: " + err.message);
+                                showError("Ocurrió un error inesperado al renderizar el reporte: " + err.message);
                                 loadingSection.classList.add('hidden');
                                 uploadSection.classList.remove('hidden');
                             }
@@ -350,10 +367,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res.ok) {
                         pollProgress(currentTaskId); // Reanudar polling
                     } else {
-                        alert("Error al iniciar el análisis profundo.");
+                        showError("Error al iniciar el análisis profundo.");
+                        loadingSection.classList.add('hidden');
+                        uploadSection.classList.remove('hidden');
                     }
                 } catch(e) {
-                    alert("Error enviando campeones: " + e.message);
+                    showError("Error enviando campeones: " + e.message);
+                    loadingSection.classList.add('hidden');
+                    uploadSection.classList.remove('hidden');
                 }
             });
         }
@@ -503,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Reset --- //
     resetBtn.addEventListener('click', () => {
+        hideError();
         resultsSection.classList.add('hidden');
         uploadSection.classList.remove('hidden');
         selectedFile = null;
