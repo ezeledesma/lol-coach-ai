@@ -34,7 +34,7 @@
                     <input type="password" id="custom-api-key" class="hextech-input" placeholder="Pega tu API KEY aquí..." style="flex: 1; min-width: 200px;">
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn secondary" style="margin-top: 0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; padding: 0 1rem; border-radius: 4px;">Obtener Llave (Gratis)</a>
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.6rem; line-height: 1.4;">Si invitas amigos, pídeles que hagan clic en <b>"Obtener Llave"</b>, inicien sesión con su Google, den a <i>Create API Key</i> y la peguen aquí. Es gratis y evita que gasten tu cuota privada. Si estás jugando en tu propia PC, déjalo vacío.</p>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.6rem; line-height: 1.4;">Si invitas amigos, pídeles que hagan clic en <b>"Obtener Llave"</b>, inicien sesión con su Google, den a <i>Create API Key</i> y la peguen aquí. Es gratis y evita que gasten tu cuota privada.</p>
             </div>
 
             <button id="analyze-btn" class="btn primary" style="margin-top: 1.5rem;" disabled>Iniciar Análisis Coach</button>
@@ -54,6 +54,25 @@
                     ⏱️ <span id="eta-text">Calculando...</span>
                 </div>
             </div>
+        </section>
+
+        <!-- Confirmar Campeones -->
+        <section id="champions-section" class="glass-panel hidden" style="width: 100%; max-width: 900px;">
+            <h2 style="color: var(--gold); margin-bottom: 1rem;">Confirmación de Campeones</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">La IA ha detectado los siguientes campeones. Corrige el nombre si hay error (en inglés y sin espacios, ej: MissFortune) e indica quién eres tú (POV).</p>
+            
+            <div class="champions-grid">
+                <div class="team-col ally-team">
+                    <h3 style="color: var(--hextech-blue); text-align: center; margin-bottom: 1rem;">Equipo Aliado</h3>
+                    <div id="ally-list" class="champ-list"></div>
+                </div>
+                <div class="team-col enemy-team">
+                    <h3 style="color: var(--red); text-align: center; margin-bottom: 1rem;">Equipo Enemigo</h3>
+                    <div id="enemy-list" class="champ-list"></div>
+                </div>
+            </div>
+
+            <button id="confirm-champs-btn" class="btn primary" style="margin-top: 2rem;">Comenzar Análisis Coach</button>
         </section>
 
         <!-- Resultados -->

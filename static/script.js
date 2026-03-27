@@ -200,24 +200,122 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressDetail.textContent = data.status;
                     loadingText.textContent = 'El IA Coach está analizando el VOD...';
 
-                    if (data.done) {
+                    if (data.state === "REQUIRES_CONFIRMATION") {
+                        clearInterval(intervalId);
+                        clearInterval(etaCountdownInterval);
+                        
+                        currentFileId = data.result.file_id;
+                        currentTaskId = taskId;
+                        renderChampionsUI(data.result.champions);
+                        
+                        loadingSection.classList.add('hidden');
+                        document.getElementById('champions-section').classList.remove('hidden');
+                    } else if (data.state === "DONE") {
                         clearInterval(intervalId);
                         clearInterval(etaCountdownInterval);
                         progressFill.style.width = '100%';
                         progressDetail.textContent = "¡Análisis Completado!";
-                        etaBadge.classList.add('hidden');
                         
                         // Mostramos 1 seg la barra llena y renderizamos
                         setTimeout(() => {
+                            const etaBadge = document.getElementById('eta-badge');
+                            if(etaBadge) etaBadge.classList.add('hidden');
+                            
                             renderResults(data.result);
                             loadingSection.classList.add('hidden');
-                            resultsSection.classList.remove('hidden');
+                            document.getElementById('results-section').classList.remove('hidden');
                         }, 500);
                     }
                 } catch (e) {
                     console.error("Error consultando el progreso: ", e);
                 }
             }, 1000); // Poll cada segundo
+        }
+
+        let currentFileId = null;
+        let currentTaskId = null;
+
+        function renderChampionsUI(champions) {
+            const allyList = document.getElementById('ally-list');
+            const enemyList = document.getElementById('enemy-list');
+            allyList.innerHTML = '';
+            enemyList.innerHTML = '';
+
+            champions.forEach((champ, index) => {
+                const isAlly = champ.team.toLowerCase() === 'aliado';
+                
+                const card = document.createElement('div');
+                card.className = 'champ-card';
+                card.innerHTML = `
+                    <img class="champ-img" src="https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${champ.name.replace(/[^a-zA-Z]/g, '')}.png" alt="${champ.name}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/29.png'">
+                    <div class="champ-info">
+                        <input type="text" class="champ-name-input" value="${champ.name}" data-index="${index}" placeholder="Ej: Ahri">
+                        <span class="champ-role">${champ.role}</span>
+                    </div>
+                    <label class="pov-selector" style="cursor: pointer;">
+                        <input type="radio" name="pov-radio" value="${index}" ${champ.is_pov ? 'checked' : ''}>
+                        POV
+                    </label>
+                `;
+                
+                const input = card.querySelector('.champ-name-input');
+                input.addEventListener('change', (e) => { 
+                    champ.name = e.target.value;
+                    const img = card.querySelector('.champ-img');
+                    img.src = `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${champ.name.replace(/[^a-zA-Z]/g, '')}.png`;
+                });
+
+                const radio = card.querySelector('input[type="radio"]');
+                radio.addEventListener('change', (e) => {
+                    champions.forEach(c => c.is_pov = false);
+                    champ.is_pov = true;
+                });
+
+                if (isAlly) allyList.appendChild(card);
+                else enemyList.appendChild(card);
+            });
+
+            const confirmBtn = document.getElementById('confirm-champs-btn');
+            const clone = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(clone, confirmBtn);
+
+            clone.addEventListener('click', async () => {
+                document.getElementById('champions-section').classList.add('hidden');
+                loadingSection.classList.remove('hidden');
+                
+                progressFill.style.width = '50%';
+                progressDetail.textContent = 'Validando campeones y resumiendo estrategia...';
+                loadingText.textContent = 'El Coach Challenger está redactando la crítica profunda...';
+                
+                // Reiniciar ETA estimate a unos ~30s
+                updateETA(30);
+                const etaBadge = document.getElementById('eta-badge');
+                if(etaBadge) etaBadge.classList.remove('hidden');
+                
+                const apiKeyInput = document.getElementById('custom-api-key').value;
+                
+                const payload = {
+                    task_id: currentTaskId,
+                    file_id: currentFileId,
+                    api_key: apiKeyInput || null,
+                    champions: champions
+                };
+
+                try {
+                    const res = await fetch('/api/generate-report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        pollProgress(currentTaskId); // Reanudar polling
+                    } else {
+                        alert("Error al iniciar el análisis profundo.");
+                    }
+                } catch(e) {
+                    alert("Error enviando campeones: " + e.message);
+                }
+            });
         }
     });
 

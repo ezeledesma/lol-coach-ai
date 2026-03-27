@@ -1,6 +1,7 @@
 import sys
 import os
-from coach_ai import analyze_video
+import json
+from coach_ai import analyze_video_json
 
 def main():
     if len(sys.argv) < 2:
@@ -18,7 +19,8 @@ def main():
     if not os.environ.get("GEMINI_API_KEY") and not os.path.exists(".env"):
         print("Advertencia: No se encontró la GEMINI_API_KEY ni un archivo .env configurado.")
         
-    analyze_video(video_path)
+    result = analyze_video_json(video_path)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
