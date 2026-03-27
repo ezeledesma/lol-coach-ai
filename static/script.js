@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const etaBadge = document.getElementById('eta-badge');
                                 if(etaBadge) etaBadge.classList.add('hidden');
                                 
-                                renderResults(data.result);
+                                renderResults(data.result, data.champ_data);
                                 loadingSection.classList.add('hidden');
                                 document.getElementById('results-section').classList.remove('hidden');
                             } catch(err) {
@@ -453,7 +453,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderResults(data) {
+    function renderResults(data, champData = []) {
+        // Encontrar POV
+        const povChamp = champData.find(c => c.is_pov) || { name: 'Desconocido', role: 'Rol' };
+        
+        // Cargar UI del POV
+        const povImg = document.getElementById('pov-champ-img');
+        const povRole = document.getElementById('pov-champ-role');
+        const povName = document.getElementById('pov-champ-name');
+        
+        if (povImg) {
+            const cleanName = getChampImageName(povChamp.name);
+            povImg.src = `https://ddragon.leagueoflegends.com/cdn/14.4.1/img/champion/${cleanName}.png`;
+            povImg.alt = povChamp.name;
+        }
+        if (povRole) povRole.textContent = (povChamp.role || 'Rol').toUpperCase();
+        if (povName) povName.textContent = povChamp.name || 'Desconocido';
+
         // Asignar el perfil deducido
         document.getElementById('profile-tag').textContent = data.player_profile_tag || "Evaluación Básica";
         document.getElementById('profile-reason').textContent = data.player_profile_reason || "No se ha determinado un perfil psicológico particular.";

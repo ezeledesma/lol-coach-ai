@@ -78,9 +78,26 @@
         <!-- Resultados -->
         <section id="results-section" class="hidden">
             <!-- Etiqueta de Perfil -->
-            <div id="player-profile-container" class="glass-panel" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 1rem; border-top: 3px solid var(--gold);">
-                <h3 style="color: var(--gold); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem;">🎯 Perfil Detectado: <span id="profile-tag" style="color: white; font-weight: bold;">...</span></h3>
-                <p id="profile-reason" style="color: var(--text-main); font-size: 0.95rem; margin: 0; max-width: 800px; text-align: center;">...</p>
+            <div id="player-profile-container" class="glass-panel" style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; padding: 1.5rem; border-top: 3px solid var(--gold); gap: 1rem;">
+                
+                <!-- POV Info -->
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1.2rem; width: 100%;">
+                    <div style="position: relative;">
+                        <img id="pov-champ-img" src="https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/29.png" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+                        <span id="pov-champ-role" style="position: absolute; bottom: -5px; right: -15px; background: var(--hextech-blue); color: black; font-size: 0.75rem; font-weight: bold; border-radius: 4px; padding: 3px 8px; border: 1px solid var(--gold); box-shadow: 0 2px 4px rgba(0,0,0,0.5); text-transform: uppercase;">ROL</span>
+                    </div>
+                    <div style="text-align: left;">
+                        <span style="color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9;">Perspectiva de Análisis</span>
+                        <h2 id="pov-champ-name" style="margin: 0; color: white; font-size: 1.8rem; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Campeón</h2>
+                    </div>
+                </div>
+
+                <hr style="width: 80%; border: 1px solid rgba(200, 170, 110, 0.2); margin: 0.5rem 0;">
+
+                <div style="text-align: center;">
+                    <h3 style="color: var(--gold); margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-size: 1rem;">🎯 Perfil de Juego: <span id="profile-tag" style="color: white; font-weight: bold; background: rgba(200,170,110,0.2); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(200,170,110,0.4);">...</span></h3>
+                    <p id="profile-reason" style="color: var(--text-main); font-size: 1.05rem; margin: 0; max-width: 800px; text-align: center; line-height: 1.6;">...</p>
+                </div>
             </div>
 
             <!-- Puntajes Circulares -->
